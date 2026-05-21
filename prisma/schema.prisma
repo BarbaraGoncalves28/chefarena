@@ -1,0 +1,484 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  JUDGE
+  VIEWER
+  PRODUCER
+  CONTESTANT
+}
+
+enum SeasonStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+enum ChallengeType {
+  INDIVIDUAL
+  TEAM
+  MYSTERY_BOX
+  SERVICE
+}
+
+enum ScoreCategory {
+  TASTE
+  PRESENTATION
+  TECHNIQUE
+  TEAMWORK
+}
+
+enum ScoreStatus {
+  PENDING
+  CONFIRMED
+  ADJUSTED
+}
+
+enum EventType {
+  SCORE_RECORDED
+  CHALLENGE_COMPLETED
+  IMMUNITY_GRANTED
+  CONTESTANT_ELIMINATED
+  RANKING_UPDATED
+  AUDIT_LOG_CREATED
+}
+
+enum ActorType {
+  SYSTEM
+  USER
+  JUDGE
+}
+
+enum AuditSeverity {
+  INFO
+  WARNING
+  ERROR
+  CRITICAL
+}
+
+enum ContestantStatus {
+  ACTIVE
+  ELIMINATED
+  WITHDRAWN
+}
+
+model User {
+  id           String        @id @default(uuid()) @db.Uuid
+  email        String        @unique
+  name         String?
+  role         Role          @default(VIEWER)
+  password     String
+  permissions String[] @default([])
+  sessions     Session[]
+  auditLogs    AuditLog[]
+  activityLogs ActivityLog[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  deletedAt    DateTime?
+
+  @@map("users")
+}
+
+model Season {
+  id                String             @id @default(uuid()) @db.Uuid
+  name              String
+  slug              String             @unique
+  status            SeasonStatus       @default(DRAFT)
+  startDate         DateTime?
+  endDate           DateTime?
+  episodes          Episode[]
+  teams             Team[]
+  events            Event[]
+  auditLogs         AuditLog[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  deletedAt         DateTime?
+  eliminations      Elimination[]
+  seasonContestants SeasonContestant[]
+  votes             Vote[]
+
+  @@index([status])
+
+  @@map("seasons")
+}
+
+model Episode {
+  id           String        @id @default(uuid()) @db.Uuid
+  season       Season        @relation(fields: [seasonId], references: [id])
+  seasonId     String        @db.Uuid
+  title        String
+  sequence     Int
+  airDate      DateTime?
+  challenges   Challenge[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  deletedAt    DateTime?
+  eliminations Elimination[]
+  votes        Vote[]
+
+  @@unique([seasonId, sequence])
+  @@index([seasonId, airDate])
+
+  @@map("episodes")
+}
+
+model Challenge {
+  id            String        @id @default(uuid()) @db.Uuid
+  episode       Episode       @relation(fields: [episodeId], references: [id])
+  episodeId     String        @db.Uuid
+  title         String
+  type          ChallengeType
+  weight        Decimal       @default(1.0) @db.Decimal(5, 2)
+  isElimination Boolean       @default(false)
+  status        String        @default("OPEN")
+  description   String?
+  scoringRules  Json?
+  dishes        Dish[]
+  scores        Score[]
+  immunities    Immunity[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  deletedAt     DateTime?
+  votes         Vote[]
+
+  @@index([episodeId, type])
+
+  @@map("challenges")
+}
+
+model Team {
+  id          String           @id @default(uuid()) @db.Uuid
+  season      Season           @relation(fields: [seasonId], references: [id])
+  seasonId    String           @db.Uuid
+  name        String
+  description String?
+  contestants TeamContestant[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  deletedAt   DateTime?
+
+  @@unique([seasonId, name])
+
+  @@map("teams")
+}
+
+model TeamContestant {
+  id           String     @id @default(uuid()) @db.Uuid
+  team         Team       @relation(fields: [teamId], references: [id])
+  teamId       String     @db.Uuid
+  contestant   Contestant @relation(fields: [contestantId], references: [id])
+  contestantId String     @db.Uuid
+  joinedAt     DateTime   @default(now())
+  leftAt       DateTime?
+
+  @@unique([teamId, contestantId])
+
+  @@map("team_members")
+}
+
+model Contestant {
+  id                String             @id @default(uuid()) @db.Uuid
+  name              String
+  bio               String?
+  status            ContestantStatus   @default(ACTIVE)
+  teams             TeamContestant[]
+  dishes            Dish[]
+  scores            Score[]
+  immunities        Immunity[]
+  eliminations      Elimination[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  deletedAt         DateTime?
+  seasonContestants SeasonContestant[]
+  votes             Vote[]
+
+  @@index([status])
+
+  @@map("contestants")
+}
+
+model Judge {
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String
+  expertise String?
+  scores    Score[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@map("judges")
+}
+
+model Dish {
+  id              String           @id @default(uuid()) @db.Uuid
+  challenge       Challenge        @relation(fields: [challengeId], references: [id])
+  challengeId     String           @db.Uuid
+  contestant      Contestant       @relation(fields: [contestantId], references: [id])
+  contestantId    String           @db.Uuid
+  title           String
+  description     String?
+  metadata        Json?
+  scoreSummary    Json?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  deletedAt       DateTime?
+  scores          Score[]
+  dishIngredients DishIngredient[]
+  votes           Vote[]
+
+  @@map("dishes")
+}
+
+model Score {
+  id           String        @id @default(uuid()) @db.Uuid
+  challenge    Challenge     @relation(fields: [challengeId], references: [id])
+  challengeId  String        @db.Uuid
+  judge        Judge         @relation(fields: [judgeId], references: [id])
+  judgeId      String        @db.Uuid
+  contestant   Contestant    @relation(fields: [contestantId], references: [id])
+  contestantId String        @db.Uuid
+  dish         Dish?         @relation(fields: [dishId], references: [id])
+  dishId       String?       @db.Uuid
+  value        Int
+  weight       Decimal       @default(1.0) @db.Decimal(5, 2)
+  category     ScoreCategory
+  status       ScoreStatus   @default(CONFIRMED)
+  comments     String?
+  recordedAt   DateTime      @default(now())
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  deletedAt    DateTime?
+
+  @@index([challengeId, contestantId, judgeId])
+
+  @@map("scores")
+}
+
+model Immunity {
+  id           String     @id @default(uuid()) @db.Uuid
+  challenge    Challenge  @relation(fields: [challengeId], references: [id])
+  challengeId  String     @db.Uuid
+  contestant   Contestant @relation(fields: [contestantId], references: [id])
+  contestantId String     @db.Uuid
+  reason       String?
+  awardedAt    DateTime   @default(now())
+  expiresAt    DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  deletedAt    DateTime?
+
+  @@index([challengeId, contestantId])
+}
+
+model Session {
+  id            String         @id @default(uuid()) @db.Uuid
+  user          User           @relation(fields: [userId], references: [id])
+  userId        String         @db.Uuid
+  ipAddress     String?
+  userAgent     String?
+  isActive      Boolean        @default(true)
+  expiresAt     DateTime
+  lastSeenAt    DateTime       @default(now())
+  refreshTokens RefreshToken[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([userId])
+  @@index([expiresAt])
+
+  @@map("sessions")
+}
+
+model RefreshToken {
+  id              String    @id @default(uuid()) @db.Uuid
+  session         Session   @relation(fields: [sessionId], references: [id])
+  sessionId       String    @db.Uuid
+  tokenHash       String    @unique
+  createdByIp     String?
+  revokedAt       DateTime?
+  replacedByToken String?
+  expiresAt       DateTime
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @default(now())
+
+  @@index([sessionId])
+
+  @@map("refresh_tokens")
+}
+
+model ActivityLog {
+  id         String @id @default(uuid()) @db.Uuid
+
+  userId     String? @map("user_id") @db.Uuid
+  user       User?  @relation(fields: [userId], references: [id])
+
+  entityName String @map("entity_name")
+  entityId   String @map("entity_id") @db.Uuid
+
+  action     String
+
+  details    Json?  @db.JsonB
+
+  actorType  String @map("actor_type")
+
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@map("activity_logs") // 🔥 ISSO AQUI CORRIGE TUDO
+}
+
+model Elimination {
+  id            String     @id @default(uuid()) @db.Uuid
+  season        Season     @relation(fields: [seasonId], references: [id])
+  seasonId      String     @db.Uuid
+  contestant    Contestant @relation(fields: [contestantId], references: [id])
+  contestantId  String     @db.Uuid
+  episode       Episode?   @relation(fields: [episodeId], references: [id])
+  episodeId     String?    @db.Uuid
+  reason        String
+  eliminatedAt  DateTime   @default(now())
+  sourceEventId String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  deletedAt     DateTime?
+}
+
+model Event {
+  id            String    @id @default(uuid()) @db.Uuid
+  type          EventType
+  aggregateId   String
+  aggregateType String
+  payload       Json
+  occurredAt    DateTime  @default(now())
+  actorId       String?
+  actorType     ActorType @default(SYSTEM)
+  metadata      Json?
+  createdAt     DateTime  @default(now())
+  season        Season?   @relation(fields: [seasonId], references: [id])
+  seasonId      String?   @db.Uuid
+
+  @@index([aggregateType, aggregateId])
+}
+
+model AuditLog {
+  id            String        @id @default(uuid()) @db.Uuid
+  action        String
+  actorId       String?
+  actorRole     Role?
+  targetId      String?
+  targetType    String?
+  details       Json?
+  correlationId String?
+  severity      AuditSeverity @default(INFO)
+  createdAt     DateTime      @default(now())
+  user          User?         @relation(fields: [userId], references: [id])
+  userId        String?       @db.Uuid
+  season        Season?       @relation(fields: [seasonId], references: [id])
+  seasonId      String?       @db.Uuid
+
+  @@index([actorId, targetId])
+}
+
+// Many-to-many: contestants may participate in multiple seasons.
+// This join table stores contestant-season membership and historical metadata
+model SeasonContestant {
+  id           String     @id @default(uuid()) @db.Uuid
+  season       Season     @relation(fields: [seasonId], references: [id])
+  seasonId     String     @db.Uuid
+  contestant   Contestant @relation(fields: [contestantId], references: [id])
+  contestantId String     @db.Uuid
+  joinedAt     DateTime   @default(now())
+  leftAt       DateTime?
+  initialSeed  Int?
+
+  @@unique([seasonId, contestantId])
+  @@index([seasonId])
+
+  @@map("season_contestants")
+}
+
+// Ingredients are reusable items that can be attached to dishes (many-to-many).
+model Ingredient {
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String
+  description String?
+  metadata    Json?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  dishes DishIngredient[]
+
+  @@unique([name])
+
+  @@map("ingredients")
+}
+
+// Join table for Dish <-> Ingredient with quantity/units to keep historical recipe data
+model DishIngredient {
+  id           String     @id @default(uuid()) @db.Uuid
+  dish         Dish       @relation(fields: [dishId], references: [id])
+  dishId       String     @db.Uuid
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id])
+  ingredientId String     @db.Uuid
+  quantity     Decimal?   @db.Decimal(10, 3)
+  unit         String?
+
+  @@unique([dishId, ingredientId])
+
+  @@map("dish_ingredients")
+}
+
+// Voting model to support audience or judge voting flows.
+// Votes can target a dish or contestant depending on challenge rules.
+enum VoterType {
+  AUDIENCE
+  JUDGE
+  PRODUCER
+}
+
+model Vote {
+  id           String      @id @default(uuid()) @db.Uuid
+  season       Season?     @relation(fields: [seasonId], references: [id])
+  seasonId     String?     @db.Uuid
+  episode      Episode?    @relation(fields: [episodeId], references: [id])
+  episodeId    String?     @db.Uuid
+  challenge    Challenge?  @relation(fields: [challengeId], references: [id])
+  challengeId  String?     @db.Uuid
+  dish         Dish?       @relation(fields: [dishId], references: [id])
+  dishId       String?     @db.Uuid
+  contestant   Contestant? @relation(fields: [contestantId], references: [id])
+  contestantId String?     @db.Uuid
+  voterType    VoterType   @default(AUDIENCE)
+  voterId      String? // anonymized id for audience, or user id for registered voters
+  value        Int // 1..n depending on voting rules
+  metadata     Json?
+  createdAt    DateTime    @default(now())
+  deletedAt    DateTime?
+
+  @@index([seasonId, episodeId, challengeId])
+}
+
+// Historical tracking note:
+// - `Event` and `AuditLog` tables are append-only and provide an immutable trail.
+// - `SeasonContestant`, `DishIngredient` capture historical membership and recipe composition respectively.
+// - `deletedAt` across models provides soft-delete semantics while preserving history.
+
+// Design decisions (summary):
+// - UUID PKs (`@db.Uuid`) ensure distributed-safe identifiers and easy referencing across services.
+// - `createdAt`/`updatedAt` + `deletedAt` provide temporal queries and soft delete.
+// - Join tables (`SeasonContestant`, `DishIngredient`) store historical metadata (joinedAt, quantity), enabling accurate historical reconstructions and audits.
+// - `Event` + `AuditLog` + `ActivityLog` cover domain events, security/compliance audit trails and UI/activity telemetry respectively.
+// - Indexes are placed on common query patterns (seasonId, episodeId, challengeId, actorId). For JSON queries, add GIN indexes at DB migration step for `metadata`/`payload` fields as needed.
