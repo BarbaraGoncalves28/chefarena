@@ -1,14 +1,19 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { BarChart3, Ban, Bell, CalendarDays, ChefHat, ChevronDown, ClipboardList, Gavel, LayoutDashboard, Menu, PanelLeftClose, Settings, ShieldCheck, Soup, Trophy, Users, X } from "lucide-react";
 import { useState } from "react";
 import type { LucideIcon } from "lucide-react";
+import { ChevronRight } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import type { NavigationIconName, NavigationItem } from "@/application/shell/navigation";
 
 type SidebarProps = {
   items: NavigationItem[];
+  collapsed: boolean;
+  setCollapsed: (value: boolean | ((v: boolean) => boolean)) => void;
 };
 
 function isActive(pathname: string, href: string) {
@@ -31,9 +36,8 @@ const icons: Record<NavigationIconName, LucideIcon> = {
   settings: Settings,
 };
 
-export function Sidebar({ items }: SidebarProps) {
+export function Sidebar({ items, collapsed, setCollapsed }: SidebarProps) {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const content = (
@@ -43,23 +47,27 @@ export function Sidebar({ items }: SidebarProps) {
       }`}
     >
       <div className="flex h-16 items-center gap-3 border-b border-zinc-200 px-4">
-        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-zinc-950 text-white">
-          <span className="text-sm font-semibold">CA</span>
+        <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-zinc-50">
+          <Image src="/image/logo.png" alt="Chef Arena" width={50} height={50} className="block h-full w-full object-cover" />
         </div>
         {!collapsed && (
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-zinc-950">CookOff Arena</p>
-            <p className="truncate text-xs text-zinc-500">Competition OS</p>
+            <p className="truncate text-sm font-semibold text-zinc-950">Chef Arena</p>
+    
           </div>
         )}
         <button
-          type="button"
-          onClick={() => setCollapsed((value) => !value)}
-          className="ml-auto hidden h-9 w-9 place-items-center rounded-md text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-950 lg:grid"
-          aria-label="Toggle sidebar"
-        >
-          <PanelLeftClose className="h-4 w-4" aria-hidden="true" />
-        </button>
+  type="button"
+  onClick={() => setCollapsed((value) => !value)}
+  className="ml-auto hidden lg:flex items-center justify-center h-10 w-10 rounded-lg border border-zinc-200 bg-white text-zinc-700 shadow-sm transition hover:bg-zinc-100 hover:text-zinc-950 hover:shadow-md active:scale-95"
+  aria-label="Toggle sidebar"
+>
+  {collapsed ? (
+    <ChevronRight className="h-5 w-5" />
+  ) : (
+    <ChevronLeft className="mr-0.5 h-5 w-5" />
+  )}
+</button>
       </div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
