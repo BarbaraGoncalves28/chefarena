@@ -1,12 +1,13 @@
-import type { ScoreCategory } from "@prisma/client";
+export type ScoreCategory = "TASTE" | "PRESENTATION" | "CREATIVITY" | "TECHNIQUE" | "TEAMWORK";
 
 export type ScoreCategoryWeightMap = Record<ScoreCategory, number>;
 
 export const DEFAULT_CATEGORY_WEIGHTS: ScoreCategoryWeightMap = {
-  TASTE: 0.4,
-  PRESENTATION: 0.25,
-  TECHNIQUE: 0.25,
-  TEAMWORK: 0.1,
+  TASTE: 0.5,
+  PRESENTATION: 0.3,
+  CREATIVITY: 0.2,
+  TECHNIQUE: 0,
+  TEAMWORK: 0,
 };
 
 export type ScoreInput = {
@@ -29,7 +30,8 @@ export class ScoringService {
   }
 
   static calculateEffectiveScore(input: ScoreInput) {
-    const base = Number(input.value);
+    const raw = Number(input.value);
+    const base = raw > 10 ? raw / 10 : raw;
     const scoreWeight = ScoringService.normalizeWeight(input.scoreWeight);
     const challengeWeight = ScoringService.normalizeWeight(input.challengeWeight);
     return base * scoreWeight * challengeWeight;
@@ -43,20 +45,18 @@ export class ScoringService {
       Object.keys(categoryWeights).map((category) => [category, 0]),
     ) as Record<ScoreCategory, number>;
 
-    let total = 0;
     let weightedSum = 0;
     let scoreCount = 0;
 
     for (const score of scores) {
       const effectiveScore = ScoringService.calculateEffectiveScore(score);
-      total += effectiveScore;
       categoryTotals[score.category] += effectiveScore;
       weightedSum += effectiveScore * (categoryWeights[score.category] ?? 1);
       scoreCount += 1;
     }
 
     return {
-      total: Number(total.toFixed(2)),
+      total: Number(weightedSum.toFixed(2)),
       categoryTotals: Object.fromEntries(
         Object.entries(categoryTotals).map(([category, value]) => [category, Number(value.toFixed(2))]),
       ) as Record<ScoreCategory, number>,

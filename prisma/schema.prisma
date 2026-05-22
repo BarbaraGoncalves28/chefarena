@@ -37,6 +37,7 @@ enum ChallengeType {
 enum ScoreCategory {
   TASTE
   PRESENTATION
+  CREATIVITY
   TECHNIQUE
   TEAMWORK
 }
@@ -122,12 +123,14 @@ model Episode {
   title        String
   sequence     Int
   airDate      DateTime?
+
   challenges   Challenge[]
+  eliminations Elimination[]
+  votes        Vote[]
+
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   deletedAt    DateTime?
-  eliminations Elimination[]
-  votes        Vote[]
 
   @@unique([seasonId, sequence])
   @@index([seasonId, airDate])

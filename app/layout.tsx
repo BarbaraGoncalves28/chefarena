@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CookOff Arena",
+  title: "Chef Arena",
   description: "MasterChef-inspired real-time competition platform for seasons, eliminations, and leaderboards.",
 };
 

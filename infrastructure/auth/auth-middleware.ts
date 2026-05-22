@@ -9,7 +9,16 @@ const routeAuthorizationRules: Array<{
   allowedRoles: AuthJwtPayload["role"][];
 }> = [
   { matcher: /^\/dashboard(?:\/.*)?$/, allowedRoles: ["ADMIN", "JUDGE", "VIEWER"] },
-  { matcher: /^\/admin(?:\/.*)?$/, allowedRoles: ["ADMIN"] },
+  { matcher: /^\/seasons(?:\/.*)?$/, allowedRoles: ["ADMIN", "JUDGE", "VIEWER"] },
+  { matcher: /^\/episodes(?:\/.*)?$/, allowedRoles: ["ADMIN", "JUDGE", "VIEWER"] },
+  { matcher: /^\/challenges(?:\/.*)?$/, allowedRoles: ["ADMIN", "JUDGE", "VIEWER"] },
+  { matcher: /^\/dishes(?:\/.*)?$/, allowedRoles: ["ADMIN", "JUDGE", "VIEWER"] },
+  { matcher: /^\/contestants(?:\/.*)?$/, allowedRoles: ["ADMIN", "JUDGE", "VIEWER"] },
+  { matcher: /^\/judges(?:\/.*)?$/, allowedRoles: ["ADMIN", "JUDGE", "VIEWER"] },
+  { matcher: /^\/rankings(?:\/.*)?$/, allowedRoles: ["ADMIN", "JUDGE", "VIEWER"] },
+  { matcher: /^\/eliminations(?:\/.*)?$/, allowedRoles: ["ADMIN", "JUDGE"] },
+  { matcher: /^\/admin(?:\/.*)?$/, allowedRoles: ["ADMIN", "JUDGE"] },
+  { matcher: /^\/settings(?:\/.*)?$/, allowedRoles: ["ADMIN", "JUDGE", "VIEWER"] },
   { matcher: /^\/api\/private(?:\/.*)?$/, allowedRoles: ["ADMIN", "JUDGE", "VIEWER"] },
   { matcher: /^\/management(?:\/.*)?$/, allowedRoles: ["ADMIN"] },
 ];

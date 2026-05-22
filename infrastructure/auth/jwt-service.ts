@@ -13,6 +13,7 @@ export type AuthJwtPayload = {
   sub: string;
   email: string;
   role: "ADMIN" | "JUDGE" | "VIEWER";
+  permissions?: string[];
   sessionId: string;
 };
 

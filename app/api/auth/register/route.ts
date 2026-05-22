@@ -7,8 +7,18 @@ export async function POST(request: Request) {
   const payload = await request.json();
   const parseResult = registerSchema.safeParse(payload);
   if (!parseResult.success) {
-    return NextResponse.json({ error: parseResult.error.flatten() }, { status: 422 });
-  }
+  const flattened = parseResult.error.flatten();
+
+  const firstError =
+    flattened.formErrors[0] ??
+    Object.values(flattened.fieldErrors)[0]?.[0] ??
+    "Dados inválidos";
+
+  return NextResponse.json(
+    { error: firstError },
+    { status: 422 }
+  );
+}
 
   try {
     const clientIp = request.headers.get("x-forwarded-for") ?? request.headers.get("host") ?? undefined;

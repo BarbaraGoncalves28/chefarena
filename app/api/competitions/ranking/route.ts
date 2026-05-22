@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSeasonRanking } from "@/application/competition/use-cases/get-ranking";
+import { RankingUseCases } from "@/application/rankings/ranking-use-cases";
 
 export async function GET(request: NextRequest) {
   const seasonId = request.nextUrl.searchParams.get("seasonId");
@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const ranking = await getSeasonRanking(seasonId);
+    const ranking = await RankingUseCases.getLiveRanking(seasonId);
     return NextResponse.json({ success: true, ranking });
   } catch (error) {
     return NextResponse.json({ success: false, error: (error as Error).message }, { status: 500 });

@@ -1,6 +1,8 @@
 import { CompetitionRepository } from "@/infrastructure/repositories/competition-repository";
 import { ScoreInputSchema, type ScoreSubmission } from "@/application/competition/commands/record-score-command";
 import { RankingService } from "@/services/competition/ranking-service";
+import { JudgeUseCases } from "@/application/judges/judge-use-cases";
+import { ChallengeUseCases } from "@/application/challenges/challenge-use-cases";
 
 const repository = new CompetitionRepository();
 
@@ -11,6 +13,9 @@ export async function recordScore(payload: ScoreSubmission, actorId = "system") 
   if (!challenge) {
     throw new Error("Challenge not found for score submission.");
   }
+
+  await ChallengeUseCases.assertChallengeCanBeScored(validated.challengeId);
+  await JudgeUseCases.assertJudgeCanScoreSeason(validated.judgeId, challenge.episode.seasonId);
 
   const [createdScore, immunities] = await Promise.all([
     repository.createScore(validated),
