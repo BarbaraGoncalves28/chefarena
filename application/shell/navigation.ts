@@ -24,10 +24,18 @@ export const navigationItems: NavigationItem[] = [
     href: "/seasons",
     icon: "seasons",
     roles: allRoles,
-    children: [
-      { label: "Episodes", href: "/episodes", icon: "episodes", roles: allRoles },
-      { label: "Challenges", href: "/challenges", icon: "challenges", roles: allRoles },
-    ],
+  },
+  {
+    label: "Episodes",
+    href: "/episodes",
+    icon: "episodes",
+    roles: allRoles,
+  },
+  {
+    label: "Challenges",
+    href: "/challenges",
+    icon: "challenges",
+    roles: allRoles,
   },
   {
     label: "Contestants",

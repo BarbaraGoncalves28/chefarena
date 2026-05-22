@@ -31,7 +31,7 @@ export function SeasonForm({ action, submitLabel, season, footer }: SeasonFormPr
             minLength={3}
             defaultValue={season?.name}
             className="rounded-md border border-zinc-300 px-3 py-2 text-zinc-950 outline-none transition focus:border-zinc-950"
-            placeholder="MasterChef Champions 2026"
+            placeholder="ChefArena Champions 2026"
           />
         </label>
 
