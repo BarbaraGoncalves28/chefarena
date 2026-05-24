@@ -36,9 +36,6 @@ export async function createDishAction(formData: FormData) {
     description: parsed.description ?? null,
   });
 
-  revalidatePath("/dishes");
-  revalidatePath(`/challenges/${parsed.challengeId}`);
-  revalidatePath(`/challenges/${parsed.challengeId}/run`);
   redirect(`/dishes/${dish.id}`);
 }
 
@@ -59,6 +56,8 @@ export async function updateDishAction(formData: FormData) {
 
   revalidatePath("/dishes");
   revalidatePath(`/dishes/${parsed.dishId}`);
+
+  return { success: true };
 }
 
 export async function addDishIngredientAction(formData: FormData) {
@@ -66,7 +65,10 @@ export async function addDishIngredientAction(formData: FormData) {
   const dishId = z.string().uuid().parse(formData.get("dishId"));
   const name = z.string().trim().min(2).parse(formData.get("name"));
   const quantityValue = formData.get("quantity");
-  const quantity = quantityValue ? z.coerce.number().min(0).parse(quantityValue) : null;
+  const quantity =
+  quantityValue && quantityValue.toString().trim() !== ""
+    ? Number(quantityValue)
+    : null;
   const unit = z.string().trim().optional().parse(formData.get("unit") || undefined) ?? null;
 
   await DishUseCases.addIngredient({
@@ -78,6 +80,7 @@ export async function addDishIngredientAction(formData: FormData) {
 
   revalidatePath("/dishes");
   revalidatePath(`/dishes/${dishId}`);
+  return { success: true };
 }
 
 export async function submitDishAction(formData: FormData) {
@@ -88,4 +91,6 @@ export async function submitDishAction(formData: FormData) {
 
   revalidatePath("/dishes");
   revalidatePath(`/dishes/${dishId}`);
+
+  return { success: true };
 }

@@ -231,13 +231,19 @@ model Dish {
   challengeId     String           @db.Uuid
   contestant      Contestant       @relation(fields: [contestantId], references: [id])
   contestantId    String           @db.Uuid
+
   title           String
   description     String?
+
+  difficulty      DishDifficulty   @default(MEDIUM)
+
   metadata        Json?
   scoreSummary    Json?
+
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   deletedAt       DateTime?
+
   scores          Score[]
   dishIngredients DishIngredient[]
   votes           Vote[]
@@ -450,6 +456,13 @@ enum VoterType {
   AUDIENCE
   JUDGE
   PRODUCER
+}
+
+enum DishDifficulty {
+  EASY
+  MEDIUM
+  HARD
+  EXPERT
 }
 
 model Vote {

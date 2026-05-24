@@ -2,6 +2,7 @@ import { parseDishMetadata, type DishMetadata } from "@/domain/dishes/dish-metad
 import { toDomainChallengeStatus } from "@/domain/challenges/challenge-lifecycle";
 import { toDomainChallengeType } from "@/domain/challenges/challenge-type";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
 function mapDish<T extends { metadata: unknown }>(dish: T) {
   return {
@@ -10,20 +11,12 @@ function mapDish<T extends { metadata: unknown }>(dish: T) {
   };
 }
 
-function toJsonMetadata(metadata: DishMetadata) {
-  const json: Record<string, string | number> = {
+function toJsonMetadata(metadata: DishMetadata): Prisma.InputJsonValue {
+  return {
     submissionStatus: metadata.submissionStatus,
+    preparationTimeMinutes: metadata.preparationTimeMinutes ?? null,
+    submittedAt: metadata.submittedAt ?? null,
   };
-
-  if (typeof metadata.preparationTimeMinutes === "number") {
-    json.preparationTimeMinutes = metadata.preparationTimeMinutes;
-  }
-
-  if (metadata.submittedAt) {
-    json.submittedAt = metadata.submittedAt;
-  }
-
-  return json;
 }
 
 export class DishRepository {
@@ -273,13 +266,20 @@ export class DishRepository {
         },
       },
       update: {
-        quantity: data.quantity,
+        quantity:
+        data.quantity != null && !Number.isNaN(data.quantity)
+        ? new Prisma.Decimal(String(data.quantity))
+        : null,
         unit: data.unit,
       },
+
       create: {
         dishId: data.dishId,
         ingredientId: ingredient.id,
-        quantity: data.quantity,
+        quantity:
+        data.quantity != null && !Number.isNaN(data.quantity)
+        ? new Prisma.Decimal(String(data.quantity))
+        : null,
         unit: data.unit,
       },
     });
